@@ -36,15 +36,25 @@ namespace test_190812
 
         private void Button1_Click(object sender, EventArgs e)
         {
-            TreeNode treeNode = treeView1.Nodes.Add("testNode");
-            treeNode.Nodes.Add("testChildNode");
-            treeView1.Nodes.Add("いち");
-            treeView1.Nodes[0].Nodes.Add("よん");
-            treeView1.Nodes.Add("に");
-            treeView1.Nodes.Add("さん");
-            treeView1.Nodes[1].Nodes.Add("ろく");
-            treeView1.ExpandAll();
+            TreeNode treeNode = treeView1.Nodes.Add("testNode01");
+            treeNode.Nodes.Add("testChildNode0101");
+        
+            treeView1.Nodes[0].Nodes.Add("testChildNode0102");
 
+            treeView1.Nodes.Add("testNode02");
+            treeView1.Nodes[1].Nodes.Add("testChildNode0201");
+            treeView1.Nodes.Add("testNode03");
+            treeView1.Nodes[2].Nodes.Add("testChildNode0301");
+            treeView1.Nodes.Add("testNode04");
+            
+            treeView1.ExpandAll();  
+
+        }
+        private void button2_Click(object sender, EventArgs e)
+        {
+            TreeNode cln = (TreeNode)treeView1.Nodes[1].Clone();
+            treeView1.Nodes[1].Remove();
+            treeView1.Nodes.Insert(0,cln);
         }
         //ノードがドラッグされた時
         private void TreeView1_ItemDrag(object sender, ItemDragEventArgs e)
@@ -53,8 +63,7 @@ namespace test_190812
             tv.SelectedNode = (TreeNode)e.Item;
             tv.Focus();
             //ノードのドラッグを開始する
-            DragDropEffects dde =
-                tv.DoDragDrop(e.Item, DragDropEffects.All);
+            DragDropEffects dde = tv.DoDragDrop(e.Item, DragDropEffects.All);
             //移動した時は、ドラッグしたノードを削除する
             if ((dde & DragDropEffects.Move) == DragDropEffects.Move)
                 tv.Nodes.Remove((TreeNode)e.Item);
@@ -66,6 +75,7 @@ namespace test_190812
             //ドラッグされているデータがTreeNodeか調べる
             if (e.Data.GetDataPresent(typeof(TreeNode)))
             {
+                //親ノードがクリックされたら
                 if ((e.KeyState & 8) == 8 &&
                     (e.AllowedEffect & DragDropEffects.Copy) ==
                     DragDropEffects.Copy)
@@ -95,9 +105,9 @@ namespace test_190812
                 //ドラッグされているNodeを取得する
                 TreeNode source =
                     (TreeNode)e.Data.GetData(typeof(TreeNode));
+
                 //マウス下のNodeがドロップ先として適切か調べる
-                if (target != null && target != source &&
-                        !IsChildNode(source, target))
+                if (target != null && target != source && !IsChildNode(source, target) && target.Level != 1)
                 {
                     //Nodeを選択する
                     if (target.IsSelected == false)
@@ -121,22 +131,45 @@ namespace test_190812
                 //ドロップ先のTreeNodeを取得する
                 TreeNode target =
                     tv.GetNodeAt(tv.PointToClient(new Point(e.X, e.Y)));
-                //マウス下のNodeがドロップ先として適切か調べる
-                if (target != null && target != source &&
-                    !IsChildNode(source, target))
+
+                //ドラッグしたノードが親ノードの場合
+                if (source.Level == 0)
                 {
                     //ドロップされたNodeのコピーを作成
                     TreeNode cln = (TreeNode)source.Clone();
-                    //Nodeを追加
-                    target.Nodes.Add(cln);
-                    //ドロップ先のNodeを展開
-                    target.Expand();
+                    var moveTargetIndex = 0;
+                    // 上から下へのmoveかを判定する
+                    if (target.Index > source.Index)
+                    { moveTargetIndex = target.Index + 1; }
+                    else { moveTargetIndex = target.Index; }
+
+                    treeView1.Nodes.Insert(moveTargetIndex, cln);
                     //追加されたNodeを選択
                     tv.SelectedNode = cln;
-
+                    treeView1.ExpandAll();
                 }
-                else
-                    e.Effect = DragDropEffects.None;
+                else if(source.Level == 1)
+                {
+                    //マウス下のNodeがドロップ先として適切か調べる
+                    if (target != null && target != source &&
+                        !IsChildNode(source, target))
+                    {
+                        //ドロップされたNodeのコピーを作成
+                        TreeNode cln = (TreeNode)source.Clone();
+                        //Nodeを追加
+                        target.Nodes.Add(cln);
+                        //ドロップ先のNodeを展開
+                        target.Expand();
+                        //追加されたNodeを選択
+                        tv.SelectedNode = cln;
+                        treeView1.ExpandAll();
+                    }
+                    else
+                        e.Effect = DragDropEffects.None;
+                }
+
+
+
             }
             else
                 e.Effect = DragDropEffects.None;
@@ -156,6 +189,11 @@ namespace test_190812
                 return IsChildNode(parentNode, childNode.Parent);
             else
                 return false;
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            treeView1.Nodes.Clear();
         }
     }
 }
